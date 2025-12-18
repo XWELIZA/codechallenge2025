@@ -35,72 +35,141 @@ def match_single(
             ...
         ]
     """
-    query_id = query_profile['PersonID']
-    loci = [c for c in query_profile.keys() if c != 'PersonID']
-    candidates = []
+    # === Helper: parse alleles safely ===
+    def parse_alleles(val):
+        if pd.isna(val):
+            return None
+        s = str(val).strip()
+        if s in ('-', '', 'nan', 'None'):
+            return None
+        try:
+            if ',' in s:
+                return frozenset(float(x.strip()) for x in s.split(','))
+            return frozenset([float(s)])
+        except (ValueError, TypeError):
+            return None
 
-    for _, candidate_row in database_df.iterrows():
-        cand_id = candidate_row['PersonID']
-        if cand_id == query_id:
+    # === Build/retrieve cached index (using function attribute) ===
+    db_id = id(database_df)
+    if not hasattr(match_single, '_cache') or match_single._cache.get('db_id') != db_id:
+        # Build allele index and frequency table
+        loci = [c for c in database_df.columns if c != 'PersonID']
+        allele_index = {}  # (locus, allele) -> set of person_ids
+        allele_counts = {}  # (locus, allele) -> count
+        profiles = {}  # person_id -> {locus: frozenset of alleles}
+
+        for _, row in database_df.iterrows():
+            pid = row['PersonID']
+            profile = {}
+            for locus in loci:
+                alleles = parse_alleles(row[locus])
+                profile[locus] = alleles
+                if alleles:
+                    for a in alleles:
+                        key = (locus, a)
+                        if key not in allele_index:
+                            allele_index[key] = set()
+                            allele_counts[key] = 0
+                        allele_index[key].add(pid)
+                        allele_counts[key] += 1
+            profiles[pid] = profile
+
+        # Compute frequencies
+        total_profiles = len(database_df)
+        allele_freqs = {k: v / total_profiles for k, v in allele_counts.items()}
+
+        match_single._cache = {
+            'db_id': db_id,
+            'loci': loci,
+            'allele_index': allele_index,
+            'allele_freqs': allele_freqs,
+            'profiles': profiles
+        }
+
+    cache = match_single._cache
+    loci = cache['loci']
+    allele_index = cache['allele_index']
+    allele_freqs = cache['allele_freqs']
+    profiles = cache['profiles']
+
+    query_id = query_profile['PersonID']
+
+    # Parse query profile
+    query_parsed = {}
+    for locus in loci:
+        query_parsed[locus] = parse_alleles(query_profile.get(locus))
+
+    # === Pre-filter candidates using inverted index ===
+    candidate_match_count = {}
+    for locus in loci:
+        q_alleles = query_parsed[locus]
+        if not q_alleles:
             continue
+        for allele in q_alleles:
+            key = (locus, allele)
+            if key in allele_index:
+                for pid in allele_index[key]:
+                    if pid != query_id:
+                        candidate_match_count[pid] = candidate_match_count.get(pid, 0) + 1
+
+    # Only consider candidates that share alleles at multiple loci
+    promising = [pid for pid, cnt in candidate_match_count.items() if cnt >= 8]
+
+    # === Score promising candidates ===
+    results = []
+
+    for pid in promising:
+        cand_profile = profiles[pid]
 
         clr = 1.0
         consistent = 0
         mutated = 0
         inconclusive = 0
         exclusions = 0
-        identity_matches = 0
+        identity_count = 0
         compared = 0
 
         for locus in loci:
-            # Parse alleles
-            q_val = str(query_profile.get(locus, '-')).strip()
-            c_val = str(candidate_row.get(locus, '-')).strip()
+            q_alleles = query_parsed[locus]
+            c_alleles = cand_profile.get(locus)
 
-            if q_val in ('-', '') or c_val in ('-', ''):
+            if q_alleles is None or c_alleles is None:
                 inconclusive += 1
                 continue
 
-            q_alleles = set(map(float, q_val.split(','))) if ',' in q_val else {float(q_val)}
-            c_alleles = set(map(float, c_val.split(','))) if ',' in c_val else {float(c_val)}
-
             compared += 1
             if q_alleles == c_alleles:
-                identity_matches += 1
+                identity_count += 1
 
             shared = q_alleles & c_alleles
 
             if shared:
-                # Direct match - use simple scoring
                 consistent += 1
-                # Assume allele frequency ~0.15 (average), transmission prob 0.5
-                lr = (1.0 if len(c_alleles) == 1 else 0.5) / 0.15
-                clr *= lr
-            elif any(abs(qa - ca) <= 1.0 for qa in q_alleles for ca in c_alleles if 0 < abs(qa - ca) <= 1.0):
-                # Mutation match
-                mutated += 1
-                clr *= 0.002 / 0.15
-            elif len(q_alleles) == 1 and len(c_alleles) == 1:
-                # Both single allele, possible dropout
-                inconclusive += 1
-                clr *= 0.5
+                # Simple LR: transmission_prob / frequency
+                trans = 1.0 if len(c_alleles) == 1 else 0.5
+                clr *= trans / 0.15  # Average frequency
             else:
-                # Exclusion
-                exclusions += 1
-                clr *= 0.01
+                # Check mutation
+                is_mutation = any(0 < abs(a - b) <= 1.0 for a in q_alleles for b in c_alleles)
+                if is_mutation:
+                    mutated += 1
+                    clr *= 0.01  # Mutation penalty
+                else:
+                    exclusions += 1
+                    clr *= 0.001  # Exclusion penalty
 
-        # Filter out bad matches
-        if exclusions > 4 or consistent < 5:
+        # Filter criteria
+        if exclusions > 3:
             continue
-
-        # Filter same-person (>80% identical)
-        if compared > 0 and identity_matches / compared > 0.80:
+        if consistent < 8:
+            continue
+        if compared > 0 and identity_count / compared > 0.85:
             continue
 
         posterior = clr / (clr + 1.0) if clr > 0 else 0.0
 
-        candidates.append({
-            "person_id": cand_id,
+        results.append({
+            "person_id": pid,
             "clr": clr,
             "posterior": posterior,
             "consistent_loci": consistent,
@@ -108,8 +177,8 @@ def match_single(
             "inconclusive_loci": inconclusive
         })
 
-    candidates.sort(key=lambda x: -x['clr'])
-    return candidates[:10]
+    results.sort(key=lambda x: -x['clr'])
+    return results[:10]
 
 
 # ============================================================

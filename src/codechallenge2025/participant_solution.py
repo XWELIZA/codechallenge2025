@@ -16,9 +16,9 @@ from typing import List, Dict, Any
 # ============================================================
 PARTIAL_MIN = 1
 MISMATCH_MAX = 3
-PARTIAL_BONUS = 1.0  # CHANGED: was 1.0
+PARTIAL_BONUS = 3.0
 PREFILTER_MIN = 5
-IDENTICAL_MAX = 12   # NEW
+IDENTICAL_MAX = 18
 
 DEFAULT_FREQ = 0.01
 
@@ -138,14 +138,13 @@ def score_candidate(query_parsed, cand_profile, loci, allele_freqs,
         return None
     if partial_count < partial_min:
         return None
-    if identical_count > identical_max:  # NEW: filter same-person
+    if identical_count > identical_max:
         return None
     
     score = total_lr * (1 + partial_count * partial_bonus)
     
     return {
         "clr": score,
-        "partial_count": partial_count,  # NEW: for sorting
         "posterior": partial_count / 21.0,
         "consistent_loci": identical_count + partial_count,
         "mutated_loci": mutation_count,
@@ -197,14 +196,13 @@ def match_single(
     for pid in promising:
         result = score_candidate(
             query_parsed, profiles[pid], loci, allele_freqs,
-            PARTIAL_MIN, MISMATCH_MAX, PARTIAL_BONUS, IDENTICAL_MAX  # Added IDENTICAL_MAX
+            PARTIAL_MIN, MISMATCH_MAX, PARTIAL_BONUS, IDENTICAL_MAX
         )
         if result:
             result["person_id"] = pid
             candidates.append(result)
     
-    # Sort by partial_count first, then CLR (prioritizes true parents)
-    candidates.sort(key=lambda x: (x["partial_count"], x["clr"]), reverse=True)
+    candidates.sort(key=lambda x: x["clr"], reverse=True)
     return candidates[:10]
 
 

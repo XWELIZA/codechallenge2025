@@ -35,31 +35,32 @@ def match_single(
             ...
         ]
     """
+
     # === Helper: parse alleles safely ===
     def parse_alleles(val):
         if pd.isna(val):
             return None
         s = str(val).strip()
-        if s in ('-', '', 'nan', 'None'):
+        if s in ("-", "", "nan", "None"):
             return None
         try:
-            if ',' in s:
-                return frozenset(float(x.strip()) for x in s.split(','))
+            if "," in s:
+                return frozenset(float(x.strip()) for x in s.split(","))
             return frozenset([float(s)])
         except (ValueError, TypeError):
             return None
 
     # === Build/retrieve cached index (using function attribute) ===
     db_id = id(database_df)
-    if not hasattr(match_single, '_cache') or match_single._cache.get('db_id') != db_id:
+    if not hasattr(match_single, "_cache") or match_single._cache.get("db_id") != db_id:
         # Build allele index and frequency table
-        loci = [c for c in database_df.columns if c != 'PersonID']
+        loci = [c for c in database_df.columns if c != "PersonID"]
         allele_index = {}  # (locus, allele) -> set of person_ids
         allele_counts = {}  # (locus, allele) -> count
         profiles = {}  # person_id -> {locus: frozenset of alleles}
 
         for _, row in database_df.iterrows():
-            pid = row['PersonID']
+            pid = row["PersonID"]
             profile = {}
             for locus in loci:
                 alleles = parse_alleles(row[locus])
@@ -79,20 +80,20 @@ def match_single(
         allele_freqs = {k: v / total_profiles for k, v in allele_counts.items()}
 
         match_single._cache = {
-            'db_id': db_id,
-            'loci': loci,
-            'allele_index': allele_index,
-            'allele_freqs': allele_freqs,
-            'profiles': profiles
+            "db_id": db_id,
+            "loci": loci,
+            "allele_index": allele_index,
+            "allele_freqs": allele_freqs,
+            "profiles": profiles,
         }
 
     cache = match_single._cache
-    loci = cache['loci']
-    allele_index = cache['allele_index']
-    allele_freqs = cache['allele_freqs']
-    profiles = cache['profiles']
+    loci = cache["loci"]
+    allele_index = cache["allele_index"]
+    allele_freqs = cache["allele_freqs"]
+    profiles = cache["profiles"]
 
-    query_id = query_profile['PersonID']
+    query_id = query_profile["PersonID"]
 
     # Parse query profile
     query_parsed = {}
@@ -110,7 +111,9 @@ def match_single(
             if key in allele_index:
                 for pid in allele_index[key]:
                     if pid != query_id:
-                        candidate_match_count[pid] = candidate_match_count.get(pid, 0) + 1
+                        candidate_match_count[pid] = (
+                            candidate_match_count.get(pid, 0) + 1
+                        )
 
     # Only consider candidates that share alleles at multiple loci
     promising = [pid for pid, cnt in candidate_match_count.items() if cnt >= 8]
@@ -150,7 +153,9 @@ def match_single(
                 clr *= trans / 0.15  # Average frequency
             else:
                 # Check mutation
-                is_mutation = any(0 < abs(a - b) <= 1.0 for a in q_alleles for b in c_alleles)
+                is_mutation = any(
+                    0 < abs(a - b) <= 1.0 for a in q_alleles for b in c_alleles
+                )
                 if is_mutation:
                     mutated += 1
                     clr *= 0.01  # Mutation penalty
@@ -169,16 +174,18 @@ def match_single(
 
         posterior = clr / (clr + 1.0) if clr > 0 else 0.0
 
-        results.append({
-            "person_id": pid,
-            "clr": clr,
-            "posterior": posterior,
-            "consistent_loci": consistent,
-            "mutated_loci": mutated,
-            "inconclusive_loci": inconclusive
-        })
+        results.append(
+            {
+                "person_id": pid,
+                "clr": clr,
+                "posterior": posterior,
+                "consistent_loci": consistent,
+                "mutated_loci": mutated,
+                "inconclusive_loci": inconclusive,
+            }
+        )
 
-    results.sort(key=lambda x: -x['clr'])
+    results.sort(key=lambda x: -x["clr"])
     return results[:10]
 
 

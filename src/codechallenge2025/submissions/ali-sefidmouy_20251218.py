@@ -1,4 +1,4 @@
-# src/codechallenge2025/participant_solution.py
+# src/codechallenge2025/ali-sefidmouy_20251218.py
 """
 Easy Participant Template for #codechallenge2025
 
@@ -12,14 +12,11 @@ from typing import List, Dict, Any
 
 
 def match_single(
-    query_profile: Dict[str, Any], database_df: pd.DataFrame) -> List[Dict]:
+    query_profile: Dict[str, Any], database_df: pd.DataFrame
+) -> List[Dict]:
     query_id = query_profile["PersonID"]
 
-    loci = [
-        col
-        for col in database_df.columns
-        if col != "PersonID"
-    ]
+    loci = [col for col in database_df.columns if col != "PersonID"]
 
     def parse_alleles(value: Any) -> set:
         if pd.isna(value):
@@ -32,8 +29,7 @@ def match_single(
         return {a.strip() for a in text.split(",") if a.strip()}
 
     query_alleles = {
-        locus: parse_alleles(query_profile.get(locus, ""))
-        for locus in loci
+        locus: parse_alleles(query_profile.get(locus, "")) for locus in loci
     }
 
     candidates: List[Dict] = []

@@ -1,4 +1,4 @@
-# src/codechallenge2025/participant_solution.py
+# src/codechallenge2025/sina-moammar_20251218.py
 """
 Easy Participant Template for #codechallenge2025
 
@@ -15,6 +15,7 @@ def match_single(
     query_profile: Dict[str, Any], database_df: pd.DataFrame
 ) -> List[Dict]:
     import numpy as np
+
     """
     Find the top 10 candidate matches for a SINGLE query profile.
 
@@ -44,14 +45,19 @@ def match_single(
         df_2 = _df.copy()
         for col in df.columns[1:]:
             df[col] += ","
-            df_2[col] = df[col].str.split(",", expand=True)[0].replace("-", np.nan).astype(float)
+            df_2[col] = (
+                df[col]
+                .str.split(",", expand=True)[0]
+                .replace("-", np.nan)
+                .astype(float)
+            )
             df[col] = df[col].str.split(",", expand=True)[1]
             df.loc[df[col] == "", col] = df_2.loc[df[col] == "", col]
             df[col] = df[col].replace("-", np.nan).astype(float)
         df.drop("PersonID", axis=1, inplace=True)
         df_2.drop("PersonID", axis=1, inplace=True)
         return df, df_2
-    
+
     q, q_2 = split_df(pd.DataFrame([query_profile]))
 
     df, df_2 = split_df(database_df)
@@ -64,10 +70,13 @@ def match_single(
         ((m1 == 1) | (m2 == 1) | (m3 == 1) | (m4 == 1)).sum(axis=1) * 0.002
     )
 
-    return [{
-        "person_id": users[index],
-        "clr": score[index],
-    } for index in np.argsort(score)[::-1][:10]]
+    return [
+        {
+            "person_id": users[index],
+            "clr": score[index],
+        }
+        for index in np.argsort(score)[::-1][:10]
+    ]
 
 
 # ============================================================

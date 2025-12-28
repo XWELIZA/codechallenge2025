@@ -1,4 +1,4 @@
-# src/codechallenge2025/participant_solution.py
+# src/codechallenge2025/jd7943426-max_20251218.py
 """
 Easy Participant Template for #codechallenge2025
 

